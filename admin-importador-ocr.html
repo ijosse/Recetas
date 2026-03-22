@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escáner Ajustable PRO</title>
+    <meta name="theme-color" content="#0f172a">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    
+    <script>
+        try {
+            if (typeof tailwind !== 'undefined') {
+                tailwind.config = { darkMode: 'class' };
+            }
+        } catch (error) {
+            console.warn("Tailwind config error", error);
+        }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* ESTILOS DE LOS SLIDERS CORREGIDOS */
+        /* Se añade 'appearance: none' para cumplir el estándar */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none; 
+            background: transparent; 
+        }
+
+        /* Estilo para el "pulgar" (el botón que mueves) en Chrome/Safari */
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 18px; 
+            width: 18px;
+            border-radius: 50%; 
+            background: #3b82f6; 
+            margin-top: -8px; 
+            cursor: pointer; 
+            border: 2px solid white; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Estilo para el riel (la línea de fondo) en Chrome/Safari */
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%; 
+            height: 4px; 
+            cursor: pointer; 
+            background: #cbd5e1; 
+            border-radius: 2px;
+        }
+
+        /* Estilo para Firefox (por compatibilidad) */
+        input[type="range"]::-moz-range-thumb {
+            height: 18px; 
+            width: 18px;
+            border-radius: 50%; 
+            background: #3b82f6; 
+            cursor: pointer; 
+            border: 2px solid white; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .slider-label {
+            font-size: 10px; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            color: #64748b; 
+            margin-bottom: 4px; 
+            display: flex; 
+            justify-content: space-between; 
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen pb-20 transition-colors duration-300">
+
+    <div id="mi-menu-reutilizable"></div>
+
+    <div class="max-w-7xl mx-auto px-4 py-8 mt-20">
+        
+        <h1 class="text-3xl font-bold mb-2 flex items-center gap-2 text-slate-800 dark:text-white">
+            📏 Escáner con Ajuste de Altura
+        </h1>
+        <p class="text-slate-500 mb-6">Ignora la primera columna y ajusta la altura de las filas manualmente.</p>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <div class="lg:col-span-4 space-y-6">
+                
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow border border-slate-200 dark:border-slate-700">
+                    <label class="block text-sm font-bold mb-2 text-blue-600">1. Cargar Imagen</label>
+                    <input type="file" id="input-img" accept="image/*" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow border border-slate-200 dark:border-slate-700 opacity-50 pointer-events-none transition" id="panel-calibracion">
+                    <div class="mb-4 pb-2 border-b border-gray-100 dark:border-gray-700">
+                        <label class="block text-sm font-bold text-orange-500">2. Ajustar Rejilla</label>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div>
+                            <div class="slider-label"><span>Ignorar Columna Izq (Etiquetas)</span> <span id="val-start-x">0%</span></div>
+                            <input type="range" id="start-x" min="0" max="50" value="12" class="w-full">
+                        </div>
+                        <div>
+                            <div class="slider-label"><span>Ancho Total (Hasta Domingo)</span> <span id="val-end-x">100%</span></div>
+                            <input type="range" id="end-x" min="50" max="100" value="98" class="w-full">
+                        </div>
+
+                        <hr class="border-gray-100 dark:border-gray-700">
+
+                        <div>
+                            <div class="slider-label"><span>Límite Superior</span> <span id="val-start-y">0%</span></div>
+                            <input type="range" id="start-y" min="0" max="50" value="2" class="w-full">
+                        </div>
+                        <div>
+                            <div class="slider-label text-blue-600"><span>🟦 LÍNEA DE CORTE (Separador)</span> <span id="val-split-y">50%</span></div>
+                            <input type="range" id="split-y" min="10" max="90" value="50" class="w-full accent-blue-600">
+                        </div>
+                        <div>
+                            <div class="slider-label"><span>Límite Inferior</span> <span id="val-end-y">100%</span></div>
+                            <input type="range" id="end-y" min="50" max="100" value="98" class="w-full">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-800 p-5 rounded-xl shadow border border-slate-200 dark:border-slate-700 opacity-50 pointer-events-none transition" id="panel-accion">
+                    <label class="block text-sm font-bold mb-3 text-green-600">3. Escanear datos</label>
+                    
+                    <div class="flex items-center mb-3">
+                        <input type="checkbox" id="check-mejora" checked class="w-4 h-4 text-blue-600 rounded">
+                        <label for="check-mejora" class="ml-2 text-xs font-bold text-slate-600 dark:text-slate-300">Activar Filtro Nitidez (B/N)</label>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <button onclick="escanear('manana')" class="bg-orange-100 hover:bg-orange-200 text-orange-700 py-3 rounded-lg text-xs font-bold transition">
+                            ☀️ Mañana<br>(Fila 1 / Fila 2)
+                        </button>
+                        <button onclick="escanear('tarde')" class="bg-indigo-100 hover:bg-indigo-200 text-indigo-700 py-3 rounded-lg text-xs font-bold transition">
+                            🌙 Tarde<br>(Fila 1 / Fila 2)
+                        </button>
+                    </div>
+                    
+                    <div id="progreso-box" class="hidden">
+                        <div class="w-full bg-gray-200 rounded-full h-2 mb-1">
+                            <div id="barra-progreso" class="bg-green-500 h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <p id="texto-estado" class="text-[10px] text-center text-gray-500 animate-pulse">Procesando...</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="lg:col-span-8">
+                <div class="bg-gray-900 rounded-xl overflow-hidden shadow-2xl relative flex items-center justify-center min-h-[500px] border-4 border-slate-800">
+                    <p id="placeholder-text" class="text-gray-500 font-bold">Sube una imagen para ver el editor</p>
+                    <canvas id="canvas-editor" class="max-w-full max-h-[85vh]"></canvas>
+                </div>
+
+                <div class="mt-6 bg-slate-900 text-green-400 p-4 rounded-xl shadow-lg border border-slate-700 relative">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-white text-xs font-bold">📦 JSON Generado (Acumulativo)</h3>
+                        <button onclick="reiniciarJSON()" class="text-[10px] text-red-400 hover:text-red-300">🗑️ Limpiar datos</button>
+                    </div>
+                    <textarea id="resultado-json" readonly class="w-full h-32 bg-transparent border-none outline-none font-mono text-[10px] resize-none"></textarea>
+                    <button onclick="copiarCodigo()" class="absolute bottom-4 right-4 bg-white/10 hover:bg-white/20 text-white px-3 py-1 rounded text-xs font-bold transition border border-white/20 backdrop-blur">📋 Copiar</button>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="navbar.js"></script>
+
+    <script>
+        // VARIABLES
+        let imgObj = new Image();
+        let canvas = document.getElementById('canvas-editor');
+        let ctx = canvas.getContext('2d');
+        
+        let cfg = { startX: 12, endX: 98, startY: 5, splitY: 50, endY: 95 };
+        
+        let datosFinales = {
+            nombre: "Menú Nuevo",
+            semana: Array(7).fill(null).map((_, i) => ({
+                dia: ["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"][i],
+                comidas: { segundoDesayuno: [], almuerzo: [], merienda: [], cena: [] }
+            }))
+        };
+
+        // CARGA IMAGEN
+        document.getElementById('input-img').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                imgObj.onload = () => {
+                    document.getElementById('placeholder-text').classList.add('hidden');
+                    document.getElementById('panel-calibracion').classList.remove('opacity-50', 'pointer-events-none');
+                    document.getElementById('panel-accion').classList.remove('opacity-50', 'pointer-events-none');
+                    ajustarCanvas();
+                    dibujar();
+                }
+                imgObj.src = ev.target.result;
+            }
+            reader.readAsDataURL(file);
+        });
+
+        function ajustarCanvas() {
+            canvas.width = imgObj.width;
+            canvas.height = imgObj.height;
+        }
+
+        function dibujar() {
+            if (!imgObj.src) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(imgObj, 0, 0);
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const x1 = (cfg.startX / 100) * w;
+            const x2 = (cfg.endX / 100) * w;
+            const y1 = (cfg.startY / 100) * h;
+            const ySplit = (cfg.splitY / 100) * h;
+            const y2 = (cfg.endY / 100) * h;
+            const anchoUtil = x2 - x1;
+            const anchoDia = anchoUtil / 7;
+
+            // ZONA OSCURA
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+            ctx.fillRect(0, 0, x1, h);
+            ctx.fillRect(x2, 0, w - x2, h);
+            ctx.fillRect(x1, 0, anchoUtil, y1);
+            ctx.fillRect(x1, y2, anchoUtil, h - y2);
+
+            // REJILLA
+            ctx.beginPath();
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 2;
+            ctx.rect(x1, y1, anchoUtil, y2 - y1);
+            for(let i=1; i<7; i++) ctx.moveTo(x1 + (anchoDia * i), y1), ctx.lineTo(x1 + (anchoDia * i), y2);
+            ctx.stroke();
+
+            // CORTE AZUL
+            ctx.beginPath();
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 4;
+            ctx.moveTo(x1, ySplit);
+            ctx.lineTo(x2, ySplit);
+            ctx.stroke();
+
+            // TEXTOS
+            ctx.fillStyle = "white"; ctx.font = "bold 20px Arial";
+            ctx.fillText("Fila 1", x1 + 10, y1 + 25);
+            ctx.fillText("Fila 2", x1 + 10, ySplit + 25);
+        }
+
+        // SLIDERS
+        function actualizarCfg() {
+            cfg.startX = parseInt(document.getElementById('start-x').value);
+            cfg.endX = parseInt(document.getElementById('end-x').value);
+            cfg.startY = parseInt(document.getElementById('start-y').value);
+            cfg.splitY = parseInt(document.getElementById('split-y').value);
+            cfg.endY = parseInt(document.getElementById('end-y').value);
+
+            document.getElementById('val-start-x').innerText = cfg.startX + '%';
+            document.getElementById('val-end-x').innerText = cfg.endX + '%';
+            document.getElementById('val-start-y').innerText = cfg.startY + '%';
+            document.getElementById('val-split-y').innerText = cfg.splitY + '%';
+            document.getElementById('val-end-y').innerText = cfg.endY + '%';
+
+            dibujar();
+        }
+
+        ['start-x', 'end-x', 'start-y', 'split-y', 'end-y'].forEach(id => {
+            document.getElementById(id).addEventListener('input', actualizarCfg);
+        });
+
+        // --- MOTOR DE ESCANEO MEJORADO ---
+        async function escanear(modo) {
+            const box = document.getElementById('progreso-box');
+            const txt = document.getElementById('texto-estado');
+            const bar = document.getElementById('barra-progreso');
+            const usarFiltro = document.getElementById('check-mejora').checked;
+            box.classList.remove('hidden');
+
+            const w = canvas.width;
+            const h = canvas.height;
+            const x1 = (cfg.startX / 100) * w;
+            const anchoUtil = ((cfg.endX / 100) * w) - x1;
+            const anchoDia = anchoUtil / 7;
+            const y1 = (cfg.startY / 100) * h;
+            const ySplit = (cfg.splitY / 100) * h;
+            const y2 = (cfg.endY / 100) * h;
+
+            const tipos = modo === 'manana' ? ['segundoDesayuno', 'almuerzo'] : ['merienda', 'cena'];
+
+            try {
+                for(let i=0; i<7; i++) {
+                    const diaX = x1 + (anchoDia * i);
+
+                    txt.innerText = `Mejorando y Leyendo Día ${i+1} (Arriba)...`;
+                    bar.style.width = `${((i*2)+1)/14*100}%`;
+                    const txt1 = await leerRecorte(diaX, y1, anchoDia, ySplit - y1, usarFiltro);
+                    limpiarYGuardar(i, tipos[0], txt1);
+
+                    txt.innerText = `Mejorando y Leyendo Día ${i+1} (Abajo)...`;
+                    bar.style.width = `${((i*2)+2)/14*100}%`;
+                    const txt2 = await leerRecorte(diaX, ySplit, anchoDia, y2 - ySplit, usarFiltro);
+                    limpiarYGuardar(i, tipos[1], txt2);
+                }
+                
+                txt.innerText = "✅ Completado";
+                actualizarJSONVisual();
+                setTimeout(() => box.classList.add('hidden'), 2000);
+
+            } catch (e) {
+                alert("Error: " + e);
+            }
+        }
+
+        async function leerRecorte(x, y, w, h, mejorar) {
+            const tmpCv = document.createElement('canvas');
+            const tCtx = tmpCv.getContext('2d');
+
+            if (mejorar) {
+                // 1. ESCALADO (ZOOM)
+                const scale = 2.5;
+                tmpCv.width = w * scale;
+                tmpCv.height = h * scale;
+                
+                tCtx.drawImage(imgObj, x, y, w, h, 0, 0, w * scale, h * scale);
+                
+                // 2. BINARIZACIÓN
+                const imgData = tCtx.getImageData(0, 0, tmpCv.width, tmpCv.height);
+                const d = imgData.data;
+                for (let i = 0; i < d.length; i += 4) {
+                    const r = d[i], g = d[i+1], b = d[i+2];
+                    const v = (0.2126*r + 0.7152*g + 0.0722*b >= 160) ? 255 : 0;
+                    d[i] = d[i+1] = d[i+2] = v; 
+                }
+                tCtx.putImageData(imgData, 0, 0);
+
+            } else {
+                tmpCv.width = w; tmpCv.height = h;
+                tCtx.drawImage(imgObj, x, y, w, h, 0, 0, w, h);
+            }
+            
+            const { data: { text } } = await window.Tesseract.recognize(tmpCv.toDataURL('image/jpeg'), 'spa');
+            return text;
+        }
+
+        function limpiarYGuardar(diaIndex, tipo, texto) {
+            let lineas = texto.split('\n')
+                .map(l => l.trim())
+                .filter(l => l.length > 2)
+                .filter(l => !l.toLowerCase().includes('comentario'));
+            
+            lineas = lineas.map(l => l.replace(/^[|_.,-]+/g, '').trim()); 
+            lineas = lineas.map(l => l.charAt(0).toUpperCase() + l.slice(1).toLowerCase());
+            
+            if(lineas.length === 0) lineas = ["-"];
+            datosFinales.semana[diaIndex].comidas[tipo] = lineas;
+        }
+
+        function actualizarJSONVisual() {
+            let json = JSON.stringify(datosFinales, null, 4);
+            json = json.replace(/"(\w+)":/g, '$1:');
+            document.getElementById('resultado-json').value = "// Copia en menus.js\n" + json + ",";
+        }
+
+        function copiarCodigo() {
+            document.getElementById('resultado-json').select();
+            document.execCommand('copy');
+            alert("Copiado");
+        }
+        
+        function reiniciarJSON() {
+            if(confirm("¿Borrar datos?")) location.reload();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Recetas</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#0f172a">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100 min-h-screen pb-20 transition-colors duration-300">
+
+    <div id="mi-menu-reutilizable"></div>
+
+    <div class="max-w-7xl mx-auto px-4 py-8 mt-20">
+        
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+            <div>
+                <h1 class="text-3xl font-bold text-slate-800 dark:text-white flex items-center gap-2">👨‍🍳 Gestor de Recetas</h1>
+                <p class="text-slate-500 dark:text-slate-400">Crea, edita y organiza tu recetario.</p>
+            </div>
+            <div class="flex gap-2 w-full md:w-auto">
+                <button onclick="modoNuevaReceta()" class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl transition shadow">
+                    ➕ Nueva
+                </button>
+                <button onclick="descargarArchivo()" class="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-xl transition shadow flex items-center justify-center gap-2">
+                    💾 Descargar recetas.js
+                </button>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row gap-8 h-[80vh]">
+            
+            <div class="w-full md:w-1/3 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col transition-colors">
+                <div class="p-4 border-b border-slate-100 dark:border-slate-700">
+                    <input type="text" id="buscador" onkeyup="filtrarLista()" placeholder="🔍 Buscar receta..." 
+                           class="w-full p-2 border rounded-lg outline-none transition-colors
+                                  bg-slate-50 dark:bg-slate-700 
+                                  border-slate-200 dark:border-slate-600 
+                                  text-slate-800 dark:text-white
+                                  focus:ring-2 focus:ring-blue-400">
+                </div>
+                <div id="lista-recetas" class="overflow-y-auto flex-1 p-2 space-y-1">
+                    </div>
+            </div>
+
+            <div class="w-full md:w-2/3 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 relative overflow-y-auto transition-colors">
+                
+                <h2 id="titulo-form" class="text-2xl font-bold text-slate-800 dark:text-white mb-6 pb-2 border-b border-slate-100 dark:border-slate-700">Editar Receta</h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">ID (Nombre foto)</label>
+                        <input type="number" id="id-receta" 
+                               class="w-full p-2 border rounded font-mono font-bold outline-none transition-colors
+                                      bg-slate-50 dark:bg-slate-700 
+                                      text-blue-600 dark:text-blue-400
+                                      border-slate-200 dark:border-slate-600
+                                      focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-blue-400">
+                        <p class="text-[10px] text-gray-400 mt-1">Archivo: <span id="nombre-foto-preview" class="font-bold">...jpg</span></p>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Tiempo (Minutos)</label>
+                        <div class="relative">
+                            <input type="number" id="tiempo" placeholder="Ej: 45"
+                                   class="w-full p-2 border rounded outline-none transition-colors
+                                          bg-slate-50 dark:bg-slate-700 
+                                          text-slate-800 dark:text-white
+                                          border-slate-200 dark:border-slate-600
+                                          focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-blue-400 pr-12">
+                            <span class="absolute right-3 top-2 text-sm text-gray-400 font-bold select-none pointer-events-none">min</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Título del Plato</label>
+                    <input type="text" id="titulo" 
+                           class="w-full p-2 border rounded text-lg font-semibold outline-none transition-colors
+                                  bg-slate-50 dark:bg-slate-700 
+                                  text-slate-800 dark:text-white
+                                  border-slate-200 dark:border-slate-600
+                                  focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-blue-400">
+                </div>
+
+                <div class="mb-4 bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl border border-slate-200 dark:border-slate-600">
+                    <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-3">Categorías / Comidas</label>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-3">
+                        <label class="flex items-center space-x-2 cursor-pointer bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 transition">
+                            <input type="checkbox" name="cat-check" value="Desayuno (primer desayuno)" class="w-4 h-4 text-blue-600 rounded focus:ring-blue-500">
+                            <span class="text-xs font-medium leading-tight">☕ 1º Desayuno</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 transition">
+                            <input type="checkbox" name="cat-check" value="Desayuno (Segundo desayuno)" class="w-4 h-4 text-orange-500 rounded focus:ring-orange-500">
+                            <span class="text-xs font-medium leading-tight">🥪 2º Desayuno</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 transition">
+                            <input type="checkbox" name="cat-check" value="Almuerzo" class="w-4 h-4 text-green-600 rounded focus:ring-green-500">
+                            <span class="text-xs font-medium leading-tight">🍲 Almuerzo</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 transition">
+                            <input type="checkbox" name="cat-check" value="Merienda" class="w-4 h-4 text-yellow-500 rounded focus:ring-yellow-500">
+                            <span class="text-xs font-medium leading-tight">🍎 Merienda</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-600 hover:border-blue-400 dark:hover:border-blue-500 transition">
+                            <input type="checkbox" name="cat-check" value="Cena" class="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500">
+                            <span class="text-xs font-medium leading-tight">🌙 Cena</span>
+                        </label>
+                    </div>
+
+                    <div>
+                        <input type="text" id="categoria-extra" placeholder="Otras categorías (ej: Postre, Vegano)..." 
+                               class="w-full p-2 border-b bg-transparent outline-none text-sm transition-colors
+                                      text-slate-800 dark:text-white
+                                      border-slate-300 dark:border-slate-500
+                                      focus:border-blue-500 placeholder:text-slate-400">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Ingredientes (Uno por línea)</label>
+                        <textarea id="ingredientes" rows="10" 
+                                  class="w-full p-2 border rounded text-sm outline-none transition-colors
+                                         bg-slate-50 dark:bg-slate-700 
+                                         text-slate-800 dark:text-white
+                                         border-slate-200 dark:border-slate-600
+                                         focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-blue-400"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Pasos (Uno por línea)</label>
+                        <textarea id="pasos" rows="10" 
+                                  class="w-full p-2 border rounded text-sm outline-none transition-colors
+                                         bg-slate-50 dark:bg-slate-700 
+                                         text-slate-800 dark:text-white
+                                         border-slate-200 dark:border-slate-600
+                                         focus:bg-white dark:focus:bg-slate-600 focus:ring-2 focus:ring-blue-400"></textarea>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex gap-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+                    <button onclick="guardarReceta()" class="flex-1 bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow transform active:scale-95">
+                        ✅ Guardar Cambios
+                    </button>
+                    <button onclick="borrarReceta()" id="btn-borrar" class="bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/50 text-red-600 dark:text-red-400 font-bold py-3 px-6 rounded-xl transition">
+                        🗑️ Borrar
+                    </button>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script src="navbar.js"></script>
+    <script src="recetas.js"></script>
+
+    <script>
+        // Variables globales
+        let recetasGlobales = [];
+        let recetaActualId = null;
+
+        window.onload = function() {
+            if (typeof listaRecetas !== 'undefined') {
+                recetasGlobales = JSON.parse(JSON.stringify(listaRecetas));
+                renderizarLista();
+                if (recetasGlobales.length > 0) cargarReceta(recetasGlobales[0].id);
+            } else {
+                alert("Error: No se encuentra recetas.js");
+            }
+
+            document.getElementById('id-receta').addEventListener('input', (e) => {
+                document.getElementById('nombre-foto-preview').innerText = e.target.value + ".jpg";
+            });
+        };
+
+        function renderizarLista(filtro = "") {
+            const lista = document.getElementById('lista-recetas');
+            lista.innerHTML = "";
+            
+            const recetasOrdenadas = [...recetasGlobales].sort((a, b) => b.id - a.id);
+
+            recetasOrdenadas.forEach(receta => {
+                if (receta.titulo.toLowerCase().includes(filtro.toLowerCase())) {
+                    const div = document.createElement('div');
+                    
+                    let clasesBase = "p-3 rounded-lg cursor-pointer transition border text-sm font-medium ";
+                    let clasesEstado = "";
+
+                    if (recetaActualId === receta.id) {
+                        clasesEstado = "bg-blue-100 dark:bg-blue-900/50 border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-200 font-bold";
+                    } else {
+                        clasesEstado = "text-slate-600 dark:text-slate-300 border-transparent hover:bg-slate-100 dark:hover:bg-slate-700";
+                    }
+
+                    div.className = clasesBase + clasesEstado;
+                    const tiempoTexto = !isNaN(receta.tiempo) ? receta.tiempo + " min" : receta.tiempo;
+                    
+                    div.innerHTML = `
+                        <div class="flex justify-between items-center">
+                            <span>${receta.id} - ${receta.titulo}</span>
+                            <span class="text-xs opacity-60 bg-white dark:bg-slate-900 px-1 rounded">${tiempoTexto}</span>
+                        </div>
+                    `;
+                    div.onclick = () => cargarReceta(receta.id);
+                    lista.appendChild(div);
+                }
+            });
+        }
+
+        function filtrarLista() {
+            const texto = document.getElementById('buscador').value;
+            renderizarLista(texto);
+        }
+
+        function cargarReceta(id) {
+            const receta = recetasGlobales.find(r => r.id === id);
+            if (!receta) return;
+
+            recetaActualId = id;
+            document.getElementById('titulo-form').innerText = "Editar Receta";
+            document.getElementById('btn-borrar').style.display = 'block';
+
+            document.getElementById('id-receta').value = receta.id;
+            document.getElementById('titulo').value = receta.titulo;
+            
+            // Tiempo numérico
+            let tiempoLimpio = receta.tiempo;
+            if (typeof tiempoLimpio === 'string') {
+                tiempoLimpio = parseInt(tiempoLimpio) || "";
+            }
+            document.getElementById('tiempo').value = tiempoLimpio;
+
+            // --- CARGAR CATEGORÍAS EN CHECKBOXES ---
+            document.querySelectorAll('input[name="cat-check"]').forEach(cb => cb.checked = false);
+            document.getElementById('categoria-extra').value = "";
+
+            const cats = Array.isArray(receta.categoria) ? receta.categoria : [receta.categoria];
+            const extras = [];
+
+            cats.forEach(c => {
+                const checkbox = document.querySelector(`input[name="cat-check"][value="${c}"]`);
+                if (checkbox) {
+                    checkbox.checked = true;
+                } else {
+                    if (c && c.trim() !== "") extras.push(c);
+                }
+            });
+            document.getElementById('categoria-extra').value = extras.join(', ');
+            // ----------------------------------------
+
+            document.getElementById('ingredientes').value = receta.ingredientes.join('\n');
+            document.getElementById('pasos').value = receta.pasos.join('\n');
+            document.getElementById('nombre-foto-preview').innerText = receta.id + ".jpg";
+
+            renderizarLista(document.getElementById('buscador').value);
+        }
+
+        function modoNuevaReceta() {
+            recetaActualId = null;
+            document.getElementById('titulo-form').innerText = "✨ Nueva Receta";
+            document.getElementById('btn-borrar').style.display = 'none';
+
+            const maxId = recetasGlobales.reduce((max, r) => r.id > max ? r.id : max, 0);
+            
+            document.getElementById('id-receta').value = maxId + 1;
+            document.getElementById('nombre-foto-preview').innerText = (maxId + 1) + ".jpg";
+            document.getElementById('titulo').value = "";
+            document.getElementById('tiempo').value = "";
+            
+            document.querySelectorAll('input[name="cat-check"]').forEach(cb => cb.checked = false);
+            document.getElementById('categoria-extra').value = "";
+
+            document.getElementById('ingredientes').value = "";
+            document.getElementById('pasos').value = "";
+            
+            document.getElementById('titulo').focus();
+            renderizarLista(document.getElementById('buscador').value);
+        }
+
+        function guardarReceta() {
+            const id = parseInt(document.getElementById('id-receta').value);
+            const titulo = document.getElementById('titulo').value;
+            if (!titulo) return alert("¡El título es obligatorio!");
+
+            const tiempoInput = document.getElementById('tiempo').value;
+            const tiempoNum = parseInt(tiempoInput) || 0; 
+
+            // --- RECOGER CATEGORÍAS ---
+            const categoriasSeleccionadas = [];
+            document.querySelectorAll('input[name="cat-check"]:checked').forEach(cb => {
+                categoriasSeleccionadas.push(cb.value);
+            });
+            const extras = document.getElementById('categoria-extra').value.split(',').map(c => c.trim()).filter(c => c !== "");
+            const categoriasFinales = [...categoriasSeleccionadas, ...extras];
+            // ---------------------------
+
+            const nuevaReceta = {
+                id: id,
+                titulo: titulo,
+                tiempo: tiempoNum,
+                categoria: categoriasFinales,
+                ingredientes: document.getElementById('ingredientes').value.split('\n').filter(l => l.trim() !== ""),
+                pasos: document.getElementById('pasos').value.split('\n').filter(l => l.trim() !== "")
+            };
+
+            const indiceExistente = recetasGlobales.findIndex(r => r.id === recetaActualId);
+
+            if (indiceExistente >= 0 && recetaActualId !== null) {
+                if (id !== recetaActualId && recetasGlobales.some(r => r.id === id)) {
+                    return alert("Error: Ya existe otra receta con el ID " + id);
+                }
+                recetasGlobales[indiceExistente] = nuevaReceta;
+                alert("✅ Receta actualizada.");
+            } else {
+                if (recetasGlobales.some(r => r.id === id)) {
+                    return alert("Error: Ya existe una receta con el ID " + id);
+                }
+                recetasGlobales.push(nuevaReceta);
+                alert("✅ Nueva receta creada.");
+            }
+            cargarReceta(id);
+        }
+
+        function borrarReceta() {
+            if (!recetaActualId) return;
+            if (confirm("¿Seguro que quieres borrar esta receta?")) {
+                recetasGlobales = recetasGlobales.filter(r => r.id !== recetaActualId);
+                renderizarLista();
+                if (recetasGlobales.length > 0) cargarReceta(recetasGlobales[0].id);
+                else modoNuevaReceta();
+            }
+        }
+
+        function descargarArchivo() {
+            let jsonString = JSON.stringify(recetasGlobales, null, 4);
+            jsonString = jsonString.replace(/"(\w+)":/g, '$1:');
+            const contenidoJS = "const listaRecetas = " + jsonString + ";";
+            
+            const blob = new Blob([contenidoJS], { type: "text/javascript" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "recetas.js";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            alert("📂 Archivo descargado. Reemplaza tu 'recetas.js' original.");
+        }
+    </script>
+</body>
+</html>
